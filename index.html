@@ -1,0 +1,105 @@
+<html>
+<head>
+<script src="https://code.jquery.com/jquery-1.10.1.js"></script>
+<script src="https://anothercdn.googlecode.com/files/base64.js"></script>
+<script src="https://jquery-xml2json-plugin.googlecode.com/svn/trunk/jquery.xml2json.js"></script>
+<script src="serialize.js"></script>
+<script>
+
+$(this).load(function() {
+
+//$('#login_form').hide();
+$('#logged_in').hide();
+
+var loginForm = $('<iframe src="https://qc2d.atlanta.hp.com/qcbin/rest/is-authenticated?login-form-required=y"></iframe>');
+loginForm.appendTo('#login_form');
+loginForm.load(function(ev){
+    tryLogin();
+});
+
+function tryLogin() {
+    $.ajax("https://qc2d.atlanta.hp.com/qcbin/rest/is-authenticated?login-form-required=y", {
+        success: function(response) {
+            try {
+                $('#logged_in_username').html($.xml2json(response).Username);
+                $('#login_form').hide();
+                $('#logged_in').show();
+            }
+            catch(err) {
+                $('#login_form').show();
+                $('#logged_in').hide();
+            }
+        },
+        error: function(ev) {
+            console.log(ev);
+        }
+        ,
+        xhrFields: {
+            withCredentials: true
+        }
+    });
+}
+
+function showDefects() {
+    var status = "status[Open%20or%20New];";
+    var owner =  "owner[" + $("#logged_in_username").html() + "];";
+$.ajax("https://qc2d.atlanta.hp.com/qcbin/rest/domains/BTO/projects/ETG/defects?query={" + status + owner + "}",
+       {
+       xhrFields: {
+         withCredentials: true
+       }
+       }).done(function(data) {
+    var myDefects = $.xml2json(data).Entity;
+    if (!(myDefects instanceof Array)) {
+        myDefects = [myDefects];
+    }
+    var defects = myDefects.map(function (myDefect) {
+        var defect = myDefect.Fields.Field.reduce(function(prev, current) {
+            prev[current.Name] = current.Value;
+            return prev;
+        }, {});
+        return defect;
+    });
+    defects.map(function(defect) {
+        console.log(defect);
+        $('#container').appendTo('body').html(defect.name + "<br/>" +
+                                              defect.description + "<br/>" +
+                                              defect["dev-comments"] + "<br/>");
+    });
+    
+});
+    
+}
+
+$('#defects').bind('click', function () {
+    showDefects();
+});
+
+$('#logout').bind('click', function() {
+    $.ajax("https://qc2d.atlanta.hp.com/qcbin/authentication-point/logout",
+    {
+        success: function() {
+            $('#logged_in').hide();
+        },
+        xhrFields: {
+            withCredentials: true
+        }
+    });
+});
+
+});
+</script>
+</head>
+
+<body>
+<div id="logged_in">Logged in as <span id="logged_in_username"></span>
+<button id="logout">Logout</button>
+<button id="defects">My defects</button>
+</div>
+
+<div id="login_form">
+</div>
+
+<div id="container"></div>
+</body>
+</html>
