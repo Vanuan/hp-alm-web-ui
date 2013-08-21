@@ -7,10 +7,12 @@
 
 $(this).load(function() {
 
+var API_URL = "https://qc2d.atlanta.hp.com/qcbin/rest/";
+
 $('#logged_in').hide();
 
-var loginForm = $('<iframe src="https://qc2d.atlanta.hp.com/qcbin/rest/is-authenticated?login-form-required=y"></iframe>');
-loginForm.appendTo('#login_form');
+var loginForm = $('#login_form');
+loginForm.attr('src', API_URL + 'is-authenticated?login-form-required=y');
 loginForm.load(function(ev){
     tryLogin();
 });
@@ -106,8 +108,8 @@ $('#logout').bind('click', function() {
   </div>
 </div>
 
-<div id="login_form">
-</div>
+<iframe id="login_form">
+</iframe>
 
 <div id="container"></div>
 </body>
