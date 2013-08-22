@@ -7,38 +7,50 @@
 
 $(this).load(function() {
 
-var API_URL = "https://qc2d.atlanta.hp.com/qcbin/rest/";
+var API_URL = "https://qc2d.atlanta.hp.com/qcbin/";
+var ALM = {};
 
-$('#logged_in').hide();
-
-var loginForm = $('#login_form');
-loginForm.attr('src', API_URL + 'is-authenticated?login-form-required=y');
-loginForm.load(function(ev){
-    tryLogin();
-});
-
-function tryLogin() {
-    $.ajax("https://qc2d.atlanta.hp.com/qcbin/rest/is-authenticated?login-form-required=y", {
-        success: function(response) {
-            try {
-                $('#logged_in_username').html($.xml2json(response).Username);
-                $('#login_form').hide();
-                $('#logged_in').show();
-            }
-            catch(err) {
-                $('#login_form').show();
-                $('#logged_in').hide();
-            }
-        },
-        error: function(ev) {
-            console.log(ev);
-        }
-        ,
+ALM.ajax = function ajax(path, onSuccess, onError) {
+    $.ajax(API_URL + path, {
+        success: onSuccess,
+        error: onError,
         xhrFields: {
             withCredentials: true
         }
     });
+};
+
+ALM.showLoginFrom = function showLoginForm(loginForm, onLogin, onError) {
+    loginForm.attr('src', API_URL + 'rest/is-authenticated?login-form-required=y');
+    loginForm.load(function(ev) {
+        tryLogin(onLogin, onError);
+    });
+    function tryLogin(onLogin, onError) {
+        ALM.ajax("rest/is-authenticated?login-form-required=y", function(response) {
+            try {
+                onLogin($.xml2json(response).Username);
+            }
+            catch(err) {
+                onError();
+            }
+        },
+        function(err) {
+            onError(err);
+        });
+    }
 }
+
+$('#logged_in').hide();
+
+ALM.showLoginForm($('#login_form'), function(username) {
+    $('#logged_in_username').html(username);
+    $('#login_form').hide();
+    $('#logged_in').show();
+}, function(err) {
+    $('#login_form').show();
+    $('#logged_in').hide();
+});
+
 
 function showDefects(query) {
 $.ajax("https://qc2d.atlanta.hp.com/qcbin/rest/domains/BTO/projects/ETG/defects?query={" + query + "}" + "&fields=id,name,description,dev-comments,severity",
