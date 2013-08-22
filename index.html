@@ -12,6 +12,7 @@ ALM.config("https://qc2d.atlanta.hp.com/qcbin/", "BTO", "ETG");
 
 $('#logged_in').hide();
 
+function showLogin () {
 ALM.showLoginForm($('#login_form'), function(username) {
     $('#logged_in_username').html(username);
     $('#login_form').hide();
@@ -20,6 +21,9 @@ ALM.showLoginForm($('#login_form'), function(username) {
     $('#login_form').show();
     $('#logged_in').hide();
 });
+}
+
+showLogin();
 
 function showDefects(query) {
     ALM.getDefects(function onSuccess(defects, totalCount) {
@@ -47,6 +51,8 @@ $('#team_defects').bind('click', function () {
 $('#logout').bind('click', function() {
     ALM.logout(function() {
         $('#logged_in').hide();
+        $('#login_form').show();
+        showLogin();
     });
 });
 
