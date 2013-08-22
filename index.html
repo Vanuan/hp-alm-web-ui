@@ -3,42 +3,12 @@
 <script src="https://code.jquery.com/jquery-1.10.1.js"></script>
 <script src="https://anothercdn.googlecode.com/files/base64.js"></script>
 <script src="https://jquery-xml2json-plugin.googlecode.com/svn/trunk/jquery.xml2json.js"></script>
+<script src="hp-alm.js"></script>
 <script>
 
 $(this).load(function() {
 
-var API_URL = "https://qc2d.atlanta.hp.com/qcbin/";
-var ALM = {};
-
-ALM.ajax = function ajax(path, onSuccess, onError) {
-    $.ajax(API_URL + path, {
-        success: onSuccess,
-        error: onError,
-        xhrFields: {
-            withCredentials: true
-        }
-    });
-};
-
-ALM.showLoginFrom = function showLoginForm(loginForm, onLogin, onError) {
-    loginForm.attr('src', API_URL + 'rest/is-authenticated?login-form-required=y');
-    loginForm.load(function(ev) {
-        tryLogin(onLogin, onError);
-    });
-    function tryLogin(onLogin, onError) {
-        ALM.ajax("rest/is-authenticated?login-form-required=y", function(response) {
-            try {
-                onLogin($.xml2json(response).Username);
-            }
-            catch(err) {
-                onError();
-            }
-        },
-        function(err) {
-            onError(err);
-        });
-    }
-}
+ALM.config("https://qc2d.atlanta.hp.com/qcbin/", "BTO", "ETG");
 
 $('#logged_in').hide();
 
@@ -51,35 +21,16 @@ ALM.showLoginForm($('#login_form'), function(username) {
     $('#logged_in').hide();
 });
 
-
 function showDefects(query) {
-$.ajax("https://qc2d.atlanta.hp.com/qcbin/rest/domains/BTO/projects/ETG/defects?query={" + query + "}" + "&fields=id,name,description,dev-comments,severity",
-       {
-       xhrFields: {
-         withCredentials: true
-       }
-       }).done(function(data) {
-    var defectsJSON = $.xml2json(data);
-    var myDefects = defectsJSON.Entity;
-    var defectsCount = defectsJSON.TotalResults;
-    if (!(myDefects instanceof Array)) {
-        myDefects = [myDefects];
-    }
-    var defects = myDefects.map(function (myDefect) {
-        var defect = myDefect.Fields.Field.reduce(function(prev, current) {
-            prev[current.Name] = current.Value;
-            return prev;
-        }, {});
-        return defect;
-    });
-    var defects_html = $('#container').html("<p>" + defects.length + " out of " + defectsCount + "</p>");
-    defects.map(function(defect) {
-        console.log(defect);
-            defects_html.append(defect.id + " " + defect.name + "<br/>" +
-                                defect.description + "<br/>" +
-                                defect["dev-comments"] + "<br/>");
-    });
-});
+    ALM.getDefects(function onSuccess(defects, totalCount) {
+        var defects_html = $('#container');
+        defects.map(function(defect) {
+            console.log(defect);
+                defects_html.append(defect.id + " " + defect.name + "<br/>" +
+                                    defect.description + "<br/>" +
+                                    defect["dev-comments"] + "<br/>");
+        });
+    }, function onError() {}, query);
 }
 
 $('#my_defects').bind('click', function () {
@@ -94,14 +45,8 @@ $('#team_defects').bind('click', function () {
 });
 
 $('#logout').bind('click', function() {
-    $.ajax("https://qc2d.atlanta.hp.com/qcbin/authentication-point/logout",
-    {
-        success: function() {
-            $('#logged_in').hide();
-        },
-        xhrFields: {
-            withCredentials: true
-        }
+    ALM.logout(function() {
+        $('#logged_in').hide();
     });
 });
 
