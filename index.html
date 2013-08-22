@@ -27,7 +27,7 @@ showLogin();
 
 function showDefects(query) {
     ALM.getDefects(function onSuccess(defects, totalCount) {
-        var defects_html = $('#container');
+        var defects_html = $('#container').html("");
         defects.map(function(defect) {
             console.log(defect);
                 defects_html.append(defect.id + " " + defect.name + "<br/>" +
